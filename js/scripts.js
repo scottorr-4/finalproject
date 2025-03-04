@@ -12,7 +12,7 @@ info.onAdd = function (map) {
 
 // Method to update the control based on feature properties passed
 info.update = function (props) {
-    this._div.innerHTML = '<h4>Heat Damage</h4>' + (props ?
+    this._div.innerHTML = '<h4>Annual Emissions</h4>' + (props ?
         '<b>' + props.name + '</b><br />' + props['Variable observation value'] + ' metric tons of CO<sub>2</sub>' :
         'Hover over a state');
 };
@@ -84,6 +84,14 @@ function createMap() {
 
         // Log the clicked coordinates
         console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+
+        // Log pointer event properties
+        const event = e.originalEvent; // Access the original DOM event
+        const pressure = event.pressure || 0; // Default to 0 if not supported
+        const pointerType = event.pointerType || 'unknown';
+
+        console.log(`Pressure: ${pressure}`);
+        console.log(`Pointer Type: ${pointerType}`);
 
         // Fetch weather data for the clicked coordinates
         fetch(`https://api.weather.gov/points/${latitude},${longitude}`)
