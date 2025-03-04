@@ -72,8 +72,9 @@ function createMap() {
         };
     }
     
-    // Add OSM base tile layer
-    L.tileLayer('https://api.mapbox.com/styles/v1/scottorr4/cm7i7gurc003j01t2ajqh77zh/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1Ijoic2NvdHRvcnI0IiwiYSI6ImNtNnpkMTM5ODAzaXIya3Ezd3pxNGNlajEifQ.2E0ODTQx45I6VofWWc_B4w', {
+   // Add OSM base tile layer
+    L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     }).addTo(map);
 
     // Add GeoJSON layer to map with styling and event handlers
