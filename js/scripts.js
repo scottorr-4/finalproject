@@ -1,8 +1,7 @@
-// Map
-
+// Map and GeoJSON variables
 var map, geojson;
 
-// Define the info control for map
+// Define the info control for the map
 var info = L.control();
 
 info.onAdd = function (map) {
@@ -31,14 +30,16 @@ function highlightFeature(e) {
 
     layer.bringToFront();
 
-    // Update the info control for map
+    // Update the info control for the map
     info.update(layer.feature.properties);
 }
 
 // Function to reset the highlight on mouseout
 function resetHighlight(e) {
-    geojson.resetStyle(e.target);
-    info.update(); // Reset the info control for map
+    if (geojson) {
+        geojson.resetStyle(e.target); // Ensure geojson is defined before calling resetStyle
+    }
+    info.update(); // Reset the info control for the map
 }
 
 // Function to zoom to a feature on click
@@ -55,49 +56,67 @@ function onEachFeature(feature, layer) {
     });
 }
 
-// Function to create map
+// Function to create the map
 function createMap() {
     map = L.map('map', {
-        center: [38.83, -98.58],
+        center: [38.83, -98.58], // Center of the map (USA)
         zoom: 5
     });
 
-    function style(feature) {
-        return {
-            fillColor: null,
-            weight: 2,
-            opacity: 1,
-            color: 'white',
-            fillOpacity: 0
-        };
-    }
+    // Styling function for GeoJSON layers
+    const style = feature => ({
+        fillColor: 'transparent', // Use transparent to avoid null issues
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        fillOpacity: 0
+    });
     
-   // Add OSM base tile layer
-    L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Add OpenStreetMap base tile layer using HTTPS
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     }).addTo(map);
 
-    // Add GeoJSON layer to map with styling and event handlers
-    fetch("data/state_emissions.json")
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (json) {
-            // Use the JSON data to create the geojson2 layer
-            geojson = L.geoJson(json, { 
-                style: style,
-                onEachFeature: onEachFeature
-            }).addTo(map);
+    // Add a click event listener to the map
+    map.on('click', e => {
+        const latitude = e.latlng.lat;
+        const longitude = e.latlng.lng;
 
-            // Add info control to map
-            info.addTo(map);
-        })
-        .catch(function (error) {
-            console.error("Error loading the data: ", error);
-        });
+        // Log the clicked coordinates
+        console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+
+        // Fetch weather data for the clicked coordinates
+        fetch(`https://api.weather.gov/points/${latitude},${longitude}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(json => {
+                // Log the fetched data
+                console.log('Fetched Data:', json);
+
+                // Ensure the fetched data is properly added as a GeoJSON layer
+                if (geojson) {
+                    map.removeLayer(geojson); // Remove the existing layer if already present
+                }
+
+                geojson = L.geoJson(json, {
+                    style: style,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error fetching weather data:', error);
+            });
+    });
+
+    // Add the info control to the map
+    info.addTo(map);
 }
 
 // Initialize the map when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     createMap();
 });
