@@ -8,31 +8,53 @@ function createMap() {
         map.remove(); // Remove the existing map instance
     }
 
-    map = L.map('map', {
-        center: [38.83, -98.58], // Center of the map (USA)
-        zoom: 5
-    });
+    // Initialize the map without center or zoom
+    map = L.map('map');
+
+    // Explicitly set the view after initializing the map
+    map.setView([45, -120], 7); // Sets center (latitude, longitude) and zoom level
 
     // Add OpenStreetMap base tile layer using HTTPS
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
+        minZoom: 0,
+        maxZoom: 20,
+        attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        ext: 'jpg'
     }).addTo(map);
+
+// Add the legend to the map
+var legend = L.control({ position: 'bottomleft' });
+
+legend.onAdd = function () {
+    var div = L.DomUtil.create('div', 'info legend');
+    
+    // Title for the legend
+    div.innerHTML += '<strong>Blueberry Heat Damage Risk</strong><br><br>';
+
+    var grades = ['High risk', 'Moderate risk', 'No risk'];
+    var colors = ['red', 'yellow', 'green'];
+
+    // Loop through the grades and create a legend item for each
+    for (var i = 0; i < grades.length; i++) {
+        div.innerHTML +=
+            '<i style="background:' + colors[i] + '; width: 18px; height: 18px; display: inline-block; margin-right: 5px;"></i> ' +
+            grades[i] + '<br>';
+    }
+
+    return div;
+};
+
+legend.addTo(map);
+
 
     // Add a click event listener to the map
     map.on('click', e => {
-        const latitude = e.latlng.lat;
-        const longitude = e.latlng.lng;
+        // Truncate latitude and longitude to two decimal places
+        const latitude = e.latlng.lat.toFixed(2);
+        const longitude = e.latlng.lng.toFixed(2);
 
         // Log the clicked coordinates
         console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
-
-        // Log pointer event properties
-        const event = e.originalEvent; // Access the original DOM event
-        const pressure = event.pressure || 0; // Default to 0 if not supported
-        const pointerType = event.pointerType || 'unknown';
-
-        console.log(`Pressure: ${pressure}`);
-        console.log(`Pointer Type: ${pointerType}`);
 
         // Fetch weather data for the clicked coordinates
         fetch(`https://api.weather.gov/points/${latitude},${longitude}`)
@@ -43,10 +65,8 @@ function createMap() {
                 return response.json();
             })
             .then(json => {
-                // Log the fetched data
                 console.log('Fetched Data:', json);
 
-                // Fetch forecast GeoJSON if the forecast URL is present
                 if (json.properties.forecast) {
                     return fetch(json.properties.forecast);
                 } else {
@@ -60,12 +80,10 @@ function createMap() {
                 return response.json();
             })
             .then(forecastJson => {
-                // Log the fetched forecast data
                 console.log('Fetched Forecast Data:', forecastJson);
 
-                // Ensure the fetched forecast data is properly added as a GeoJSON layer
                 if (geojson) {
-                    map.removeLayer(geojson); // Remove the existing layer if already present
+                    map.removeLayer(geojson);
                 }
 
                 geojson = L.geoJson(forecastJson, {
@@ -73,30 +91,36 @@ function createMap() {
                     onEachFeature: onEachFeature
                 }).addTo(map);
 
-                // Loop through each day's forecast and display days with temperatures above 40°F or wind speeds over 15 mph
-                const daysAbove40 = forecastJson.properties.periods
-                    .filter(period => period.temperature > 40 && !period.name.includes('Night') && !period.name.includes('Tonight'))
-                    .map(period => period.name);
-
-                const highWindDays = forecastJson.properties.periods
-                    .filter(period => {
-                        const windSpeedMatch = period.windSpeed.match(/\d+/);
+                // Filter out nights and overnight periods and determine risk level for each day period
+                const riskMessages = forecastJson.properties.periods
+                    .filter(period => !period.name.includes('Night') && !period.name.includes('Tonight') && !period.name.includes('Overnight')) // Exclude night and overnight periods
+                    .map(period => {
+                        const temp = period.temperature;
+                        const windSpeedMatch = period.windSpeed ? period.windSpeed.match(/\d+/) : null;
                         const windSpeed = windSpeedMatch ? parseInt(windSpeedMatch[0], 10) : 0;
-                        return windSpeed > 15 && !period.name.includes('Night') && !period.name.includes('Tonight');
-                    })
-                    .map(period => period.name);
 
-                const temperatureContent = daysAbove40.length > 0 
-                    ? `High Risk. Evaporative cooling advised on ${daysAbove40.join(', ')}`
-                    : 'No risk. Evaporative cooling not needed';
+                        // Determine the risk level based on temperature and wind speed, with colored boxes
+                        if (temp > 50) {
+                            return `<div style="display: flex; align-items: center;">
+                                        <div style="width: 10px; height: 10px; background-color: red; margin-right: 5px;"></div>
+                                        Cooling advised on ${period.name}
+                                    </div>`;
+                        } else if (temp > 40 && temp <= 50 && windSpeed > 15) {
+                            return `<div style="display: flex; align-items: center;">
+                                        <div style="width: 10px; height: 10px; background-color: yellow; margin-right: 5px;"></div>
+                                        Cooling might be needed on ${period.name}
+                                    </div>`;
+                        } else {
+                            return `<div style="display: flex; align-items: center;">
+                                        <div style="width: 10px; height: 10px; background-color: green; margin-right: 5px;"></div>
+                                        No cooling needed on ${period.name}
+                                    </div>`;
+                        }
+                    });
 
-                const windSpeedContent = highWindDays.length > 0 
-                    ? `High wind on ${highWindDays.join(', ')}`
-                    : 'No additional risk from wind speed';
+                // Combine risk messages into popup content
+                const popupContent = `Location: ${latitude}, ${longitude}<br><br>${riskMessages.join('<br>')}`;
 
-                const popupContent = `${temperatureContent}<br>${windSpeedContent}`;
-
-                // Add or update the marker with the popup
                 if (marker) {
                     marker.setLatLng(e.latlng).setPopupContent(popupContent).openPopup();
                 } else {
@@ -111,7 +135,7 @@ function createMap() {
 
 // Styling function for GeoJSON layers
 const style = feature => ({
-    fillColor: 'transparent', // Use transparent to avoid null issues
+    fillColor: 'transparent',
     weight: 2,
     opacity: 1,
     color: 'white',
@@ -145,7 +169,7 @@ function highlightFeature(e) {
 // Function to reset the highlight on mouseout
 function resetHighlight(e) {
     if (geojson && e.target && geojson.resetStyle) {
-        geojson.resetStyle(e.target); // Ensure geojson and e.target are valid before calling resetStyle
+        geojson.resetStyle(e.target);
     }
 }
 
