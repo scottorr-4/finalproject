@@ -18,7 +18,7 @@ function createMap() {
     L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}', {
         minZoom: 0,
         maxZoom: 20,
-        attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
         ext: 'jpg'
     }).addTo(map);
 
@@ -37,7 +37,7 @@ legend.onAdd = function () {
     // Loop through the grades and create a legend item for each
     for (var i = 0; i < grades.length; i++) {
         div.innerHTML +=
-            '<i style="background:' + colors[i] + '; width: 18px; height: 18px; display: inline-block; margin-right: 5px;"></i> ' +
+            '<i style="background:' + colors[i] + '; width: 18px; height: 18px; display: inline-block; margin-right: 5px; vertical-align: middle;"></i> ' +
             grades[i] + '<br>';
     }
 
@@ -45,6 +45,7 @@ legend.onAdd = function () {
 };
 
 legend.addTo(map);
+
 
 
     // Add a click event listener to the map
@@ -119,7 +120,7 @@ legend.addTo(map);
                     });
 
                 // Combine risk messages into popup content
-                const popupContent = `Location: ${latitude}, ${longitude}<br><br>${riskMessages.join('<br>')}`;
+                const popupContent = `<strong>Location:</strong> <strong>${latitude}, ${longitude}</strong><br><br>${riskMessages.join('<br>')}`;
 
                 if (marker) {
                     marker.setLatLng(e.latlng).setPopupContent(popupContent).openPopup();
