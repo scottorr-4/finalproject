@@ -42,3 +42,18 @@ p{color: rgb(163, 23, 23);
 .title-container u {
     margin: 0; /* Ensures the underlined text doesn't have extra margins */
 }
+
+/* Style the legend */
+.info.legend {
+    font-size: 16px; /* Increase the font size */
+    line-height: 1.4;
+}
+
+/* Style the individual items inside the legend */
+.info.legend i {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+}
