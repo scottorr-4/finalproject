@@ -1,9 +1,9 @@
 body {
-    background-color: rgb(155, 144, 145);
+    background-color: rgb(255, 255, 255);
 }
 
 
-p{color: rgb(158, 6, 6);
+p{color: rgb(163, 23, 23);
   font-size: 40px;
   font-weight: bold;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -27,4 +27,18 @@ p{color: rgb(158, 6, 6);
     margin: 0 0 5px;
     color: #777;
 }
+/* Align the image and text horizontally */
+.title-container {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centers content horizontally */
+    text-align: center; /* Ensures the text itself is centered if it wraps */
+}
 
+.title-container img {
+    margin-right: 10px; /* Adds space between the image and the title */
+}
+
+.title-container u {
+    margin: 0; /* Ensures the underlined text doesn't have extra margins */
+}
